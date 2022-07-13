@@ -19,6 +19,25 @@ export function login(data) {
   })
 }
 
+export function passwordRegist(data) {
+  return request({
+    url: '/api/v2/auth/regist',
+    // url: '/vue-admin-template/user/login',
+    method: 'post',
+    headers: {
+      'X-Ca-Stage': process.env.VUE_APP_API_TAG,
+      'Authorization': process.env.VUE_APP_APPCODE
+    },
+    params: {
+      regist_type: 'password'
+    },
+    data: new URLSearchParams({
+      username: data['username'],
+      password: data['password']
+    })
+  })
+}
+
 export function refreshToken(refresh_token) {
   return request({
     url: '/api/v2/auth/login',
