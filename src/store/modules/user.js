@@ -1,4 +1,4 @@
-import { login, getInfo, refreshToken, passwordRegist } from '@/api/user'
+import { login, getInfo, refreshToken, passwordRegist, phoneRegist } from '@/api/user'
 import { getToken, setToken, removeToken, getRefreshToken, setRefreshToken, removeRefreshToken } from '@/utils/auth'
 import { resetRouter } from '@/router'
 
@@ -58,6 +58,28 @@ const actions = {
     const { username, password } = userInfo
     return new Promise((resolve, reject) => {
       passwordRegist({ username: username.trim(), password: password }).then(() => {
+        // if (response.userGroup.includes(process.env.VUE_APP_GROUPID) === false) {
+        // // if ( false ) {
+        //   reject('User not in admin group!')
+        // } else {
+        //   commit('SET_TOKEN', response.access_token)
+        //   commit('SET_REFRESH_TOKEN', response.refresh_token)
+        //   commit('SET_NAME', response.userName)
+        //   setToken(response.access_token)
+        //   setRefreshToken(response.refresh_token)
+        //   resolve()
+        // }
+        resolve()
+      }).catch(response => {
+        reject(response)
+      })
+    })
+  },
+
+  phoneRegist({ commit }, userInfo) {
+    const { phoneNumber, otp, otpToken } = userInfo
+    return new Promise((resolve, reject) => {
+      phoneRegist({ phoneNumber: phoneNumber.trim(), phoneNumberOtp: otp, phoneNumberOtpToken: otpToken }).then(() => {
         // if (response.userGroup.includes(process.env.VUE_APP_GROUPID) === false) {
         // // if ( false ) {
         //   reject('User not in admin group!')

@@ -38,6 +38,26 @@ export function passwordRegist(data) {
   })
 }
 
+export function phoneRegist(data) {
+  return request({
+    url: '/api/v2/auth/regist',
+    // url: '/vue-admin-template/user/login',
+    method: 'post',
+    headers: {
+      'X-Ca-Stage': process.env.VUE_APP_API_TAG,
+      'Authorization': process.env.VUE_APP_APPCODE
+    },
+    params: {
+      regist_type: 'phone'
+    },
+    data: new URLSearchParams({
+      phone_number: data['phoneNumber'],
+      phone_number_otp: data['phoneNumberOtp'],
+      phone_number_otp_token: data['phoneNumberOtpToken']
+    })
+  })
+}
+
 export function refreshToken(refresh_token) {
   return request({
     url: '/api/v2/auth/login',
@@ -69,5 +89,23 @@ export function logout() {
   return request({
     url: '/vue-admin-template/user/logout',
     method: 'post'
+  })
+}
+
+export function getPhoneOtp(phoneNumber) {
+  return request({
+    url: '/api/v2/auth/regist',
+    method: 'post',
+    headers: {
+      'X-Ca-Stage': process.env.VUE_APP_API_TAG,
+      'Authorization': process.env.VUE_APP_APPCODE
+    },
+    params: {
+      regist_type: 'phone'
+    },
+    data: new URLSearchParams({
+      phone_number: phoneNumber,
+      action: 'get_otp'
+    })
   })
 }

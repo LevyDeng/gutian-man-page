@@ -1,6 +1,6 @@
 <template>
   <div class="login-container" :style="bgImage">
-    <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on" label-position="left">
+    <el-form v-if="registType === 'password'" ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on" label-position="left">
 
       <div class="title-container">
         <h3 class="title">注册谷甜</h3>
@@ -40,6 +40,7 @@
           <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
         </span>
       </el-form-item>
+      <a class="change-regist-type" @click="registType = 'phone'">手机号注册</a>
 
       <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleRegist('password')">注册</el-button>
 
@@ -49,11 +50,54 @@
       </div> -->
 
     </el-form>
+
+    <el-form v-if="registType === 'phone'" ref="phoneForm" :model="phoneForm" :rules="phoneRules" class="login-form" auto-complete="on" label-position="left">
+
+      <div class="title-container">
+        <h3 class="title">注册谷甜</h3>
+      </div>
+
+      <el-form-item prop="phoneNumber">
+        <el-input
+          ref="phoneNumber"
+          v-model="phoneForm.phoneNumber"
+          placeholder="手机号"
+          name="phoneNumber"
+          type="text"
+          tabindex="1"
+          auto-complete="on"
+        />
+      </el-form-item>
+
+      <el-form-item prop="otp">
+        <div class="code">
+          <el-input
+            ref="otp"
+            v-model="phoneForm.otp"
+            placeholder="验证码"
+            name="otp"
+            tabindex="2"
+            auto-complete="on"
+          />
+          <el-button v-if="sendCodeDisabled === false" :disabled="sendCodeDisabled" @click="sendCode">获取验证码</el-button>
+          <el-button v-if="sendCodeDisabled === true" type="button" :disabled="sendCodeDisabled" @click="sendCode">{{ btntxt }}</el-button>
+        </div>
+      </el-form-item>
+      <a class="change-regist-type" @click="registType = 'password'">密码注册</a>
+
+      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleRegist('phone')">注册</el-button>
+
+      <!-- <div class="tips">
+        <span style="margin-right:20px;">username: admin</span>
+        <span> password: any</span>
+      </div> -->
+    </el-form>
   </div>
 </template>
 
 <script>
 import { validUsername } from '@/utils/validate'
+import { getPhoneOtp } from '@/api/user'
 
 export default {
   name: 'Login',
@@ -72,6 +116,22 @@ export default {
         callback()
       }
     }
+    const validatePhoneNumber = (rule, value, callback) => {
+      var reg = /^[1][3,4,5,7,8][0-9]{9}$/
+      if (!reg.test(value)) {
+        callback(new Error('手机号格式错误'))
+      } else {
+        callback()
+      }
+    }
+    const validateOtp = (rule, value, callback) => {
+      var reg = /^\w{4,8}$/
+      if (!reg.test(value)) {
+        callback(new Error('验证码格式错误'))
+      } else {
+        callback()
+      }
+    }
     return {
       loginForm: {
         // username: 'super',
@@ -79,16 +139,29 @@ export default {
         username: '',
         password: ''
       },
+      phoneForm: {
+        phoneNumber: '',
+        otp: ''
+      },
       loginRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
         password: [{ required: true, trigger: 'blur', validator: validatePassword }]
+      },
+      phoneRules: {
+        phoneNumber: [{ required: true, trigger: 'blur', validator: validatePhoneNumber }],
+        otp: [{ required: true, trigger: 'blur', validator: validateOtp }]
       },
       loading: false,
       passwordType: 'password',
       redirect: undefined,
       bgImage: {
         backgroundImage: 'url(' + require('@/assets/images/bg.jpg') + ')'
-      }
+      },
+      registType: 'phone',
+      otpToken: '',
+      sendCodeDisabled: false,
+      time: 60,
+      btntxt: '重新发送'
     }
   },
   watch: {
@@ -111,10 +184,10 @@ export default {
       })
     },
     handleRegist(registType) {
-      this.$refs.loginForm.validate(valid => {
-        if (valid) {
-          this.loading = true
-          if (registType === 'password') {
+      if (registType === 'password') {
+        this.$refs.loginForm.validate(valid => {
+          if (valid) {
+            this.loading = true
             this.$store.dispatch('user/passwordRegist', this.loginForm).then(() => {
               this.$message.success('注册成功!')
               this.$router.push({ path: this.redirect || '/' })
@@ -123,12 +196,68 @@ export default {
               this.$message.error(error.response.data.errors[0])
               this.loading = false
             })
+          } else {
+            console.log('输入错误!!')
+            return false
           }
-        } else {
-          console.log('输入错误!!')
-          return false
-        }
-      })
+        })
+      } else if (registType === 'phone') {
+        this.$refs.phoneForm.validate(valid => {
+          if (valid) {
+            this.loading = true
+            var postData = {
+              phoneNumber: this.phoneForm.phoneNumber,
+              otp: this.phoneForm.otp,
+              otpToken: this.otpToken
+            }
+            this.$store.dispatch('user/phoneRegist', postData).then(() => {
+              this.$message.success('注册成功!')
+              this.$router.push({ path: this.redirect || '/' })
+              this.loading = false
+            }).catch(error => {
+              this.$message.error(error.response.data.errors[0])
+              this.loading = false
+            })
+          } else {
+            console.log('输入错误!!')
+            return false
+          }
+        })
+      }
+    },
+    async sendCode() {
+      const reg = /^[1][3,4,5,7,8][0-9]{9}$/
+      if (!reg.test(this.phoneForm.phoneNumber)) {
+        this.$message.error('请输入正确的手机号')
+        return false
+      }
+      this.loading = true
+      var r = await getPhoneOtp(this.phoneForm.phoneNumber)
+      console.debug(r.otp_token)
+      if (Object.keys(r).includes('otp_token') === true) {
+        this.otpToken = r.otp_token
+        this.loading = false
+        this.$message.success('发送验证码成功')
+        this.time = 60
+        this.sendCodeDisabled = true
+        this.timer()
+      } else if (Object.keys(r).includes('errors')) {
+        this.$message.error(r['errors'][0])
+      } else {
+        this.$message.error('获取验证码失败,请稍后再试')
+      }
+      this.loading = false
+    },
+    timer() {
+      if (this.time > 0) {
+        this.time--
+        this.btntxt = this.time + 's后重新获取'
+        setTimeout(this.timer, 1000)
+      } else {
+        this.time = 0
+        this.btntxt = '获取验证码'
+        this.disabled = false
+      }
     }
   }
 }
@@ -241,6 +370,31 @@ $light_gray:#eee;
     color: $dark_gray;
     cursor: pointer;
     user-select: none;
+  }
+
+  .code {
+      .el-input {
+          width: 55%;
+          border-radius: 0px;
+          display: inline-block;
+      }
+      .el-button {
+          width: 45%;
+          border-top-left-radius: 0px;
+          border-bottom-left-radius: 0px;
+          border-left: 0px;
+          display: inline-block;
+      }
+      .el-button--primary {
+          width: 100%;
+          background-color: #ffe86a;
+          border: none;
+          color: #000;
+      }
+  }
+
+  .change-regist-type {
+    color: lightblue
   }
 }
 </style>
