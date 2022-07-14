@@ -394,7 +394,9 @@ $light_gray:#eee;
   }
 
   .change-regist-type {
-    color: lightblue
+    color: lightblue;
+    float: right;
+    margin-bottom: 10px;
   }
 }
 </style>
