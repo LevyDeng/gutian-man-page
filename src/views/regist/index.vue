@@ -40,7 +40,7 @@
           <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
         </span>
       </el-form-item>
-      <a class="change-regist-type" @click="registType = 'phone'">手机号注册</a>
+      <!-- <a class="change-regist-type" @click="registType = 'phone'">手机号注册</a> -->
 
       <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleRegist('password')">注册</el-button>
 
@@ -157,7 +157,7 @@ export default {
       bgImage: {
         backgroundImage: 'url(' + require('@/assets/images/bg.jpg') + ')'
       },
-      registType: 'phone',
+      registType: 'password',
       otpToken: '',
       sendCodeDisabled: false,
       time: 60,
